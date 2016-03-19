@@ -191,6 +191,7 @@ def test_activate_single_service(client, context, super_client):
     assert svc.metadata == metadata
     assert svc.launchConfig.version == '0'
     assert svc.launchConfig.requestedHostId == host.id
+    assert svc.launchConfig.type == 'launchConfig'
 
     # activate the service and validate that parameters were set for instance
     service = client.wait_success(svc.activate())

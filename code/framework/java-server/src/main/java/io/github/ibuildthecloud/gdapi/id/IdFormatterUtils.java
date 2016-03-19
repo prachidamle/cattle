@@ -56,6 +56,10 @@ public class IdFormatterUtils {
 
         Schema fieldSchema = schemaFactory.getSchema(field.getType());
 
+        if (!inputs.containsKey("type")) {
+            result.put("type", field.getType());
+        }
+
         for (Map.Entry<String, Field> entry : fieldSchema.getResourceFields().entrySet()) {
 
             String fieldName = entry.getKey();
