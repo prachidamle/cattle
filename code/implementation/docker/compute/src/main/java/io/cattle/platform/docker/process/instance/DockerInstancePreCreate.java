@@ -1,11 +1,11 @@
 package io.cattle.platform.docker.process.instance;
 
+import io.cattle.platform.core.constants.DockerInstanceConstants;
 import io.cattle.platform.core.constants.InstanceConstants;
 import io.cattle.platform.core.model.Image;
 import io.cattle.platform.core.model.Instance;
 import io.cattle.platform.core.model.Network;
 import io.cattle.platform.core.util.SystemLabels;
-import io.cattle.platform.docker.constants.DockerInstanceConstants;
 import io.cattle.platform.docker.storage.dao.DockerStorageDao;
 import io.cattle.platform.engine.handler.HandlerResult;
 import io.cattle.platform.engine.handler.ProcessPreListener;
@@ -60,7 +60,7 @@ public class DockerInstancePreCreate extends AbstractObjectProcessLogic implemen
 
         Network network = networkService.resolveNetwork(instance.getAccountId(), mode);
         if (network == null && StringUtils.isNotBlank(mode) && !instance.getNativeContainer()) {
-            objectProcessManager.scheduleProcessInstance(InstanceConstants.PROCESS_REMOVE, instance, null);
+            objectProcessManager.scheduleProcessInstance(InstanceConstants.PROCESS_ERROR, instance, null);
             throw new ExecutionException(String.format("Failed to find network for networkMode %s", mode),
                     null, state.getResource());
         }
