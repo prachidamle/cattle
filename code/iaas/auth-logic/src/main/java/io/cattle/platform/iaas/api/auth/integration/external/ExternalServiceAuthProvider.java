@@ -4,10 +4,12 @@ import io.cattle.platform.api.auth.Identity;
 import io.cattle.platform.core.constants.ProjectConstants;
 import io.cattle.platform.core.model.Account;
 import io.cattle.platform.core.model.AuthToken;
+import io.cattle.platform.core.model.Setting;
 import io.cattle.platform.iaas.api.auth.SecurityConstants;
 import io.cattle.platform.iaas.api.auth.dao.AuthTokenDao;
 import io.cattle.platform.iaas.api.auth.identity.Token;
 import io.cattle.platform.json.JsonMapper;
+import io.cattle.platform.object.ObjectManager;
 import io.cattle.platform.object.util.DataAccessor;
 import io.cattle.platform.token.TokenException;
 import io.cattle.platform.token.TokenService;
@@ -16,7 +18,7 @@ import io.github.ibuildthecloud.gdapi.context.ApiContext;
 import io.github.ibuildthecloud.gdapi.exception.ClientVisibleException;
 import io.github.ibuildthecloud.gdapi.request.ApiRequest;
 import io.github.ibuildthecloud.gdapi.util.ResponseCodes;
-
+import static io.cattle.platform.core.model.tables.SettingTable.*;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
@@ -26,7 +28,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
+
 
 import javax.inject.Inject;
 
@@ -56,9 +58,12 @@ public class ExternalServiceAuthProvider {
     @Inject
     private AuthTokenDao authTokenDao;
 
-    private AtomicBoolean isConfigured = new AtomicBoolean(false);
+    @Inject
+    ObjectManager objectManager;
 
-    public ExternalServiceAuthProvider() {
+    private boolean isConfigured = false;
+
+    public void initializeCallBacks() {
         setIsConfigured();
         //add callback for
         Runnable cb = (new Runnable() {
@@ -71,12 +76,23 @@ public class ExternalServiceAuthProvider {
         ServiceAuthConstants.IS_EXTERNAL_AUTH_PROVIDER.addCallback(cb);
     }
 
-    public void setIsConfigured() {
-        boolean configured = (SecurityConstants.AUTH_PROVIDER.get() != null
-                && !SecurityConstants.NO_PROVIDER.equalsIgnoreCase(SecurityConstants.AUTH_PROVIDER.get())
-                && !SecurityConstants.INTERNAL_AUTH_PROVIDERS.contains(SecurityConstants.AUTH_PROVIDER.get())
-                && ServiceAuthConstants.IS_EXTERNAL_AUTH_PROVIDER.get());
-        isConfigured.set(configured);
+    public synchronized void setIsConfigured() {
+        log.info("*******Callback called setIsConfigured**********");
+        Setting authProvider = objectManager.findAny(Setting.class,
+                SETTING.NAME, SecurityConstants.AUTH_PROVIDER_SETTING);
+        Setting isExternal = objectManager.findAny(Setting.class,
+                SETTING.NAME, ServiceAuthConstants.EXTERNAL_AUTH_PROVIDER_SETTING);
+        if(authProvider!=null && isExternal != null) {
+            boolean configured = (authProvider.getValue() != null
+                    && !SecurityConstants.NO_PROVIDER.equalsIgnoreCase(authProvider.getValue())
+                    && !SecurityConstants.INTERNAL_AUTH_PROVIDERS.contains(authProvider.getValue())
+                    && "true".equalsIgnoreCase(isExternal.getValue()));
+            isConfigured = configured;
+        }
+    }
+
+    public synchronized boolean isConfigured() {
+        return isConfigured;
     }
 
     public Token getToken(ApiRequest request) {
@@ -320,9 +336,6 @@ public class ExternalServiceAuthProvider {
         return tokenUtil.getIdentities();
     }
 
-    public boolean isConfigured() {
-        return isConfigured.get();
-    }
 
     public Identity untransform(Identity identity) {
         return identity;

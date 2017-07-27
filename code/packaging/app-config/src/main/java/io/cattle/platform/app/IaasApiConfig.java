@@ -747,7 +747,9 @@ public class IaasApiConfig {
 
     @Bean
     ExternalServiceAuthProvider ExternalServiceAuthProvider() {
-        return new ExternalServiceAuthProvider();
+        ExternalServiceAuthProvider externalProvider =  new ExternalServiceAuthProvider();
+        externalProvider.initializeCallBacks();
+        return externalProvider;
     }
 
     @Bean
