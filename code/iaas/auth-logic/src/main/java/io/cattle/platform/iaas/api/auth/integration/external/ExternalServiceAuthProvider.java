@@ -56,7 +56,7 @@ public class ExternalServiceAuthProvider {
     @Inject
     private AuthTokenDao authTokenDao;
 
-    private boolean isConfigured = false;
+    private AtomicBoolean isConfigured = new AtomicBoolean(false);
 
     public ExternalServiceAuthProvider() {
         setIsConfigured();
@@ -71,17 +71,12 @@ public class ExternalServiceAuthProvider {
         ServiceAuthConstants.IS_EXTERNAL_AUTH_PROVIDER.addCallback(cb);
     }
 
-    public synchronized void setIsConfigured() {
-        log.info("Callback called setIsConfigured**********");
+    public void setIsConfigured() {
         boolean configured = (SecurityConstants.AUTH_PROVIDER.get() != null
                 && !SecurityConstants.NO_PROVIDER.equalsIgnoreCase(SecurityConstants.AUTH_PROVIDER.get())
                 && !SecurityConstants.INTERNAL_AUTH_PROVIDERS.contains(SecurityConstants.AUTH_PROVIDER.get())
                 && ServiceAuthConstants.IS_EXTERNAL_AUTH_PROVIDER.get());
-        isConfigured = configured;
-    }
-
-    public synchronized boolean isConfigured() {
-        return isConfigured;
+        isConfigured.set(configured);
     }
 
     public Token getToken(ApiRequest request) {
@@ -325,6 +320,9 @@ public class ExternalServiceAuthProvider {
         return tokenUtil.getIdentities();
     }
 
+    public boolean isConfigured() {
+        return isConfigured.get();
+    }
 
     public Identity untransform(Identity identity) {
         return identity;
