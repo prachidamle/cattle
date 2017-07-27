@@ -26,6 +26,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.inject.Inject;
 
@@ -54,6 +55,34 @@ public class ExternalServiceAuthProvider {
     ExternalServiceTokenUtil tokenUtil;
     @Inject
     private AuthTokenDao authTokenDao;
+
+    private boolean isConfigured = false;
+
+    public ExternalServiceAuthProvider() {
+        setIsConfigured();
+        //add callback for
+        Runnable cb = (new Runnable() {
+            @Override
+            public void run() {
+                setIsConfigured();
+            }
+        });
+        SecurityConstants.AUTH_PROVIDER.addCallback(cb);
+        ServiceAuthConstants.IS_EXTERNAL_AUTH_PROVIDER.addCallback(cb);
+    }
+
+    public synchronized void setIsConfigured() {
+        log.info("Callback called setIsConfigured**********");
+        boolean configured = (SecurityConstants.AUTH_PROVIDER.get() != null
+                && !SecurityConstants.NO_PROVIDER.equalsIgnoreCase(SecurityConstants.AUTH_PROVIDER.get())
+                && !SecurityConstants.INTERNAL_AUTH_PROVIDERS.contains(SecurityConstants.AUTH_PROVIDER.get())
+                && ServiceAuthConstants.IS_EXTERNAL_AUTH_PROVIDER.get());
+        isConfigured = configured;
+    }
+
+    public synchronized boolean isConfigured() {
+        return isConfigured;
+    }
 
     public Token getToken(ApiRequest request) {
         Map<String, Object> requestBody = CollectionUtils.toMap(request.getRequestObject());
@@ -296,15 +325,6 @@ public class ExternalServiceAuthProvider {
         return tokenUtil.getIdentities();
     }
 
-    public boolean isConfigured() {
-        if (SecurityConstants.AUTH_PROVIDER.get() != null
-                && !SecurityConstants.NO_PROVIDER.equalsIgnoreCase(SecurityConstants.AUTH_PROVIDER.get())
-                && !SecurityConstants.INTERNAL_AUTH_PROVIDERS.contains(SecurityConstants.AUTH_PROVIDER.get())
-                && ServiceAuthConstants.IS_EXTERNAL_AUTH_PROVIDER.get()) {
-            return true;
-        }
-        return false;
-    }
 
     public Identity untransform(Identity identity) {
         return identity;
