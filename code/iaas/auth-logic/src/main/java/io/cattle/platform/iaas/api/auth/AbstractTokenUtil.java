@@ -157,7 +157,7 @@ public abstract class AbstractTokenUtil implements TokenUtil {
         }
         if (!authToken.getProvider().equalsIgnoreCase(SecurityConstants.AUTH_PROVIDER.get())){
             throw new ClientVisibleException(ResponseCodes.UNAUTHORIZED, "AuthProviderChanged",
-                    "Access control has changed since token was created.", null);
+                    "Access control has changed since token was created.", "Access control has changed since token was created.");
         }
         return authToken.getValue();
     }

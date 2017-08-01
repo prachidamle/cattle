@@ -28,7 +28,9 @@ public class LazyJDBCSource implements PolledConfigurationSource {
         }
 
         try {
-            return source.poll(initial, checkPoint);
+            PollResult result =  source.poll(initial, checkPoint);
+            log.info("PollResult prpos keys: {}  value: {}", result.getComplete().keySet(), result.getComplete().values());
+            return result;
         } catch (SQLException e) {
             if (firstLoad) {
                 return checkInitial(initial, checkPoint);
